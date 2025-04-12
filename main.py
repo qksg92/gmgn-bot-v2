@@ -43,8 +43,8 @@ def send_telegram_alert(ca):
         with open('errors.log', 'a') as f:
             f.write(f"Telegram error for {ca}: {e}\n")
 
-# === 1분 거래량 읽기 ===
-def get_1m_volume(ca):
+# === 1분 거래액 읽기 ===
+def get_1m_value(ca):
     url = make_detail_url(ca)
     try:
         response = session.get(url, timeout=10)
@@ -52,22 +52,30 @@ def get_1m_volume(ca):
             print(f"[Error] Failed to fetch {ca} detail page (status {response.status_code})")
             return 0
         soup = BeautifulSoup(response.text, 'html.parser')
+
+        # 거래량 추출
         volume_element = soup.find(string=lambda t: '거래량 (Volume)' in t)
         if not volume_element:
             print(f"[Volume Error] 거래량 텍스트 없음 for {ca}")
             return 0
         vol_text = volume_element.split('거래량 (Volume)')[-1]
         vol_number = ''.join(c for c in vol_text if c.isdigit() or c == '.')
-        if 'K' in vol_text:
-            return float(vol_number) * 1000
-        elif 'M' in vol_text:
-            return float(vol_number) * 1000000
-        else:
-            return float(vol_number)
+
+        # 가격 추출
+        price_element = soup.find(string=lambda t: '가격 (Price)' in t)
+        if not price_element:
+            print(f"[Price Error] 가격 정보 없음 for {ca}")
+            return 0
+        price_text = price_element.split('가격 (Price)')[-1]
+        price_number = ''.join(c for c in price_text if c.isdigit() or c == '.')
+
+        # 거래액 = 거래량 * 가격
+        return float(vol_number) * float(price_number)
+        
     except Exception as e:
-        print(f"[Volume Error] {e}")
+        print(f"[Value Error] {e}")
         with open('errors.log', 'a') as f:
-            f.write(f"Volume error for {ca}: {e}\n")
+            f.write(f"Value error for {ca}: {e}\n")
     return 0
 
 # === GMGN 인기탭 긁기 ===
@@ -143,18 +151,18 @@ def monitor():
                 del watchlist[ca]
                 continue
 
-            # 2-2. 현재 거래량 체크
-            volume = get_1m_volume(ca)
-            print(f"[Check] {ca} volume: {volume}")
+            # 2-2. 현재 거래액 체크
+            value = get_1m_value(ca)
+            print(f"[Check] {ca} value: {value}")
 
-            if volume >= 8000:
+            if value >= 5000:  # 거래액 5000달러 이상
                 last_alert = already_alerted.get(ca, 0)
                 if now - last_alert >= NO_ALERT_SECONDS:
                     send_telegram_alert(ca)
                     already_alerted[ca] = now
                     del watchlist[ca]  # 알림 보냈으면 감시 종료
             else:
-                # 거래량이 안 넘었고 아직 대기중이 아니면 대기상태로 바꿈
+                # 거래액이 안 넘었고 아직 대기중이 아니면 대기상태로 바꿈
                 if not waiting:
                     watchlist[ca]['waiting'] = True
                     watchlist[ca]['start_time'] = now  # 1분 대기 시작 시간 기록
@@ -162,9 +170,9 @@ def monitor():
                 # 이미 대기중이라면 1분 지났는지 확인
                 elif waiting and now - start_time >= 60:
                     # 1분 기다렸다가 다시 체크
-                    volume_after = get_1m_volume(ca)
-                    print(f"[Recheck] {ca} volume after 1m: {volume_after}")
-                    if volume_after >= 8000:
+                    value_after = get_1m_value(ca)
+                    print(f"[Recheck] {ca} value after 1m: {value_after}")
+                    if value_after >= 5000:
                         last_alert = already_alerted.get(ca, 0)
                         if now - last_alert >= NO_ALERT_SECONDS:
                             send_telegram_alert(ca)
