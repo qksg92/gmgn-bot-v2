@@ -9,8 +9,8 @@ TELEGRAM_TOKEN = '7724611870:AAF-bleAIi3ciNU3ND1wBf8EAceoFVl2cyk'
 TELEGRAM_CHAT_ID = '7529989951'  # 개인 ID
 
 # === 감시용 ===
-already_alerted = {}
-watchlist = {}
+already_alerted = {}  # {ca: 마지막 전송시간}
+watchlist = {}  # {ca: {'start_time': 시작시간, 'waiting': 대기중 여부}}
 
 # === 기본 설정 ===
 GMGN_POPULAR_5M_URL = 'https://gmgn.ai/?chain=sol'
