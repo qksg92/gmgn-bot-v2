@@ -1,3 +1,5 @@
+from flask import Flask
+import threading
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -7,8 +9,8 @@ TELEGRAM_TOKEN = '7724611870:AAF-bleAIi3ciNU3ND1wBf8EAceoFVl2cyk'
 TELEGRAM_CHAT_ID = '7529989951'  # 개인 ID
 
 # === 감시용 ===
-already_alerted = {}  # {ca: 마지막 전송시간}
-watchlist = {}  # {ca: {'start_time': 시작시간, 'waiting': 대기중 여부}}
+already_alerted = {}
+watchlist = {}
 
 # === 기본 설정 ===
 GMGN_POPULAR_5M_URL = 'https://gmgn.ai/?chain=sol'
@@ -50,23 +52,18 @@ def get_1m_volume(ca):
             print(f"[Error] Failed to fetch {ca} detail page (status {response.status_code})")
             return 0
         soup = BeautifulSoup(response.text, 'html.parser')
-
-        # === 거래량 데이터 정확히 뽑기 ===
         volume_element = soup.find(string=lambda t: '거래량 (Volume)' in t)
         if not volume_element:
             print(f"[Volume Error] 거래량 텍스트 없음 for {ca}")
             return 0
-        
         vol_text = volume_element.split('거래량 (Volume)')[-1]
         vol_number = ''.join(c for c in vol_text if c.isdigit() or c == '.')
-
         if 'K' in vol_text:
             return float(vol_number) * 1000
         elif 'M' in vol_text:
             return float(vol_number) * 1000000
         else:
             return float(vol_number)
-        
     except Exception as e:
         print(f"[Volume Error] {e}")
         with open('errors.log', 'a') as f:
@@ -116,7 +113,7 @@ def fetch_completed_cas():
             f.write(f"GMGN error: {e}\n")
     return list(set(cas))  # 중복 제거
 
-# === 두 개의 탭에서 코인들을 모두 가져오기 ===
+# === 두 개의 탭에서 코인들을 모두 가져기 ===
 def fetch_all_cas():
     popular_cas = fetch_popular_cas()
     completed_cas = fetch_completed_cas()
@@ -176,5 +173,17 @@ def monitor():
 
         time.sleep(CHECK_INTERVAL)
 
+# === Flask 애플리케이션 설정 ===
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+# === 메인 ===
 if __name__ == "__main__":
+    threading.Thread(target=run).start()
     monitor()
