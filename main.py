@@ -95,8 +95,8 @@ def fetch_all_cas_with_scroll():
     options.add_argument('--disable-dev-shm-usage')  # 리눅스에서 필요할 수 있음
 
     # === 여기에 크롬 경로 설정 ===
-    chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"  # 크롬 경로 설정
-    options.binary_location = chrome_path  # 크롬 경로 지정
+    chrome_path = "C:\\Users\\bhkim\\Downloads\\Win_x64_1000027_chrome-win\\chrome-win\\chrome.exe"  # Chromium 경로 설정
+    options.binary_location = chrome_path  # Chromium 경로 지정
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(PUMP_FUN_URL_1)  # 여기서 URL을 PUMP_FUN_URL_1로 변경
