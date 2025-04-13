@@ -3,19 +3,24 @@ import threading
 import time
 import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 # === 텔레그램 설정 ===
-TELEGRAM_TOKEN = '7724611870:AAF-bleAIi3ciNU3ND1wBf8EAceoFVl2cyk'
-TELEGRAM_CHAT_ID = '7529989951'  # 개인 ID
+TELEGRAM_TOKEN = '7724611870:AAF-bleAIi3ciNU3ND1wBf8EAceoFVl2cyk'  # 여기에 본인의 텔레그램 봇 토큰을 입력하세요.
+TELEGRAM_CHAT_ID = '7529989951'  # 여기에 본인의 텔레그램 사용자 ID를 입력하세요.
 
 # === 감시용 ===
 already_alerted = {}  # {ca: 마지막 전송시간}
 watchlist = {}  # {ca: {'start_time': 시작시간, 'waiting': 대기중 여부}}
 
 # === 기본 설정 ===
-GMGN_POPULAR_5M_URL = 'https://gmgn.ai/?chain=sol'
-GMGN_COMPLETED_URL = 'https://gmgn.ai/meme?chain=sol'  # 컴플리티드 탭 URL
-CHECK_INTERVAL = 10  # 인기탭 10초마다 검사
+PUMP_FUN_URL_1 = 'https://pump.fun/board?coins_sort=last_reply'  # 펌프펀 전체 코인 리스트 URL 1
+PUMP_FUN_URL_2 = 'https://pump.fun/board?coins_sort=last_trade_timestamp'  # 펌프펀 전체 코인 리스트 URL 2
+CHECK_INTERVAL = 10  # 10초마다 검사
 NO_ALERT_SECONDS = 600  # 같은 코인 다시 알림 금지 시간 (10분)
 KEEP_WATCH_SECONDS = 432000  # 감시 유지 시간 (5일)
 
@@ -24,7 +29,7 @@ session = requests.Session()
 
 # === 코인 상세 페이지 URL ===
 def make_detail_url(ca):
-    return f'https://gmgn.ai/sol/token/{ca}'
+    return f'https://pump.fun/coin/{ca}'  # 펌프펀에서 코인 상세 URL을 만들기
 
 # === 텔레그램 알림 ===
 def send_telegram_alert(ca):
@@ -46,8 +51,11 @@ def send_telegram_alert(ca):
 # === 1분 거래액 읽기 ===
 def get_1m_value(ca):
     url = make_detail_url(ca)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     try:
-        response = session.get(url, timeout=10)
+        response = session.get(url, headers=headers, timeout=10)  # User-Agent 추가
         if response.status_code != 200:
             print(f"[Error] Failed to fetch {ca} detail page (status {response.status_code})")
             return 0
@@ -78,62 +86,45 @@ def get_1m_value(ca):
             f.write(f"Value error for {ca}: {e}\n")
     return 0
 
-# === GMGN 인기탭 긁기 ===
-def fetch_popular_cas():
+# === 펌프펀 전체 코인 리스트 가져오기 ===
+def fetch_all_cas_with_scroll():
     cas = []
-    try:
-        response = session.get(GMGN_POPULAR_5M_URL, timeout=10)
-        if response.status_code != 200:
-            print("[Error] GMGN 인기탭 가져오기 실패 (status {})".format(response.status_code))
-            return []
-        soup = BeautifulSoup(response.text, 'html.parser')
-        links = soup.find_all('a', href=True)
-        for link in links:
-            href = link['href']
-            if href.startswith('/sol/token/'):
-                ca = href.split('/')[-1]
-                if ca.endswith('pump'):
-                    cas.append(ca)
-    except Exception as e:
-        print(f"[GMGN Error] {e}")
-        with open('errors.log', 'a') as f:
-            f.write(f"GMGN error: {e}\n")
-    return list(set(cas))  # 중복 제거
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    driver.get(PUMP_FUN_URL_1)  # 여기서 URL을 PUMP_FUN_URL_1로 변경
 
-# === GMGN 완료탭 긁기 ===
-def fetch_completed_cas():
-    cas = []
-    try:
-        response = session.get(GMGN_COMPLETED_URL, timeout=10)
-        if response.status_code != 200:
-            print("[Error] GMGN 완료탭 가져오기 실패 (status {})".format(response.status_code))
-            return []
-        soup = BeautifulSoup(response.text, 'html.parser')
-        links = soup.find_all('a', href=True)
-        for link in links:
-            href = link['href']
-            if href.startswith('/sol/token/'):
-                ca = href.split('/')[-1]
-                cas.append(ca)
-    except Exception as e:
-        print(f"[GMGN Error] {e}")
-        with open('errors.log', 'a') as f:
-            f.write(f"GMGN error: {e}\n")
-    return list(set(cas))  # 중복 제거
+    time.sleep(5)  # 페이지가 로드될 때까지 기다림
 
-# === 두 개의 탭에서 코인들을 모두 가져기 ===
-def fetch_all_cas():
-    popular_cas = fetch_popular_cas()
-    completed_cas = fetch_completed_cas()
-    return list(set(popular_cas + completed_cas))  # 두 리스트를 합쳐서 중복 제거
+    last_height = driver.execute_script("return document.body.scrollHeight")
+
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")  # 페이지 끝까지 스크롤
+        time.sleep(3)  # 잠시 기다려서 더 많은 코인들이 로드될 시간 제공
+
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:  # 더 이상 스크롤이 내려가지 않으면 종료
+            break
+        last_height = new_height
+
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    coins = soup.find_all('div', class_='coin-list-item')  # 이 부분은 펌프펀의 실제 HTML 구조에 맞게 수정해야 함
+    for coin in coins:
+        ca = coin.find('a')['href'].split('/')[-1]
+        market_cap = coin.find('span', class_='market-cap').text.strip().replace('$', '').replace(',', '')  # 시가총액
+        volume = coin.find('span', class_='volume').text.strip().replace('$', '').replace(',', '')  # 거래액
+        if float(market_cap) >= 10000 and float(market_cap) <= 100000:  # 시가총액이 10,000 ~ 100,000달러 사이
+            cas.append(ca)
+    
+    driver.quit()  # 드라이버 종료
+
+    return cas  # 조건에 맞는 코인 반환
 
 # === 메인 루프 ===
 def monitor():
     while True:
         now = time.time()
 
-        # 1. GMGN 인기탭 + 완료탭 긁어서 새 코인 추가
-        cas = fetch_all_cas()
+        # 1. 펌프펀 전체 코인 리스트 가져오기
+        cas = fetch_all_cas_with_scroll()
         for ca in cas:
             if ca not in watchlist:
                 watchlist[ca] = {'start_time': now, 'waiting': False}
@@ -160,7 +151,8 @@ def monitor():
                 if now - last_alert >= NO_ALERT_SECONDS:
                     send_telegram_alert(ca)
                     already_alerted[ca] = now
-                    del watchlist[ca]  # 알림 보냈으면 감시 종료
+                    # 코인을 감시 목록에서 삭제하지 않음
+                    # del watchlist[ca]  # 이 부분을 삭제하거나 주석 처리
             else:
                 # 거래액이 안 넘었고 아직 대기중이 아니면 대기상태로 바꿈
                 if not waiting:
@@ -177,9 +169,10 @@ def monitor():
                         if now - last_alert >= NO_ALERT_SECONDS:
                             send_telegram_alert(ca)
                             already_alerted[ca] = now
-                    del watchlist[ca]  # 대기 끝났으면 무조건 감시 종료
+                    # 대기 끝났으면 무조건 감시 종료
+                    # del watchlist[ca]  # 이 부분을 삭제하거나 주석 처리
 
-        time.sleep(CHECK_INTERVAL)
+        time.sleep(CHECK_INTERVAL)  # 요청 간 간격을 두어 서버에서 차단되지 않도록 함
 
 # === Flask 애플리케이션 설정 ===
 app = Flask('')
@@ -193,5 +186,5 @@ def run():
 
 # === 메인 ===
 if __name__ == "__main__":
-    threading.Thread(target=run).start()
-    monitor()
+    threading.Thread(target=run).start()  # Flask 서버를 별도의 스레드에서 실행
+    monitor()  # 봇 감시 루프를 실행
