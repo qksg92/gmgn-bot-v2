@@ -30,6 +30,38 @@ session = requests.Session()
 # === 코인 상세 페이지 URL ===
 def make_detail_url(ca):
     return f'https://pump.fun/coin/{ca}'  # 펌프펀에서 코인 상세 URL을 만들기
+from flask import Flask
+import threading
+import time
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+
+# === 텔레그램 설정 ===
+TELEGRAM_TOKEN = '7724611870:AAF-bleAIi3ciNU3ND1wBf8EAceoFVl2cyk'  # 여기에 본인의 텔레그램 봇 토큰을 입력하세요.
+TELEGRAM_CHAT_ID = '7529989951'  # 여기에 본인의 텔레그램 사용자 ID를 입력하세요.
+
+# === 감시용 ===
+already_alerted = {}  # {ca: 마지막 전송시간}
+watchlist = {}  # {ca: {'start_time': 시작시간, 'waiting': 대기중 여부}}
+
+# === 기본 설정 ===
+PUMP_FUN_URL_1 = 'https://pump.fun/board?coins_sort=last_reply'  # 펌프펀 전체 코인 리스트 URL 1
+PUMP_FUN_URL_2 = 'https://pump.fun/board?coins_sort=last_trade_timestamp'  # 펌프펀 전체 코인 리스트 URL 2
+CHECK_INTERVAL = 10  # 10초마다 검사
+NO_ALERT_SECONDS = 600  # 같은 코인 다시 알림 금지 시간 (10분)
+KEEP_WATCH_SECONDS = 432000  # 감시 유지 시간 (5일)
+
+# === 세션 재사용 ===
+session = requests.Session()
+
+# === 코인 상세 페이지 URL ===
+def make_detail_url(ca):
+    return f'https://pump.fun/coin/{ca}'  # 펌프펀에서 코인 상세 URL을 만들기
 
 # === 텔레그램 알림 ===
 def send_telegram_alert(ca):
@@ -89,52 +121,10 @@ def get_1m_value(ca):
 # === 펌프펀 전체 코인 리스트 가져오기 ===
 def fetch_all_cas_with_scroll():
     cas = []
-<<<<<<< HEAD
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
     driver.get(PUMP_FUN_URL_1)  # 여기서 URL을 PUMP_FUN_URL_1로 변경
 
     time.sleep(5)  # 페이지가 로드될 때까지 기다림
-=======
-    try:
-        response = session.get(GMGN_POPULAR_5M_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)  # User-Agent 추가
-        if response.status_code != 200:
-            print("[Error] GMGN 인기탭 가져오기 실패 (status {})".format(response.status_code))
-            return []
-        soup = BeautifulSoup(response.text, 'html.parser')
-        links = soup.find_all('a', href=True)
-        for link in links:
-            href = link['href']
-            if href.startswith('/sol/token/'):
-                ca = href.split('/')[-1]
-                if ca.endswith('pump'):
-                    cas.append(ca)
-    except Exception as e:
-        print(f"[GMGN Error] {e}")
-        with open('errors.log', 'a') as f:
-            f.write(f"GMGN error: {e}\n")
-    return list(set(cas))  # 중복 제거
-
-# === GMGN 완료탭 긁기 ===
-def fetch_completed_cas():
-    cas = []
-    try:
-        response = session.get(GMGN_COMPLETED_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)  # User-Agent 추가
-        if response.status_code != 200:
-            print("[Error] GMGN 완료탭 가져오기 실패 (status {})".format(response.status_code))
-            return []
-        soup = BeautifulSoup(response.text, 'html.parser')
-        links = soup.find_all('a', href=True)
-        for link in links:
-            href = link['href']
-            if href.startswith('/sol/token/'):
-                ca = href.split('/')[-1]
-                cas.append(ca)
-    except Exception as e:
-        print(f"[GMGN Error] {e}")
-        with open('errors.log', 'a') as f:
-            f.write(f"GMGN error: {e}\n")
-    return list(set(cas))  # 중복 제거
->>>>>>> 9aa73dd91c0bc36d17a74e455f07f35995bdeca1
 
     last_height = driver.execute_script("return document.body.scrollHeight")
 
@@ -229,8 +219,4 @@ def run():
 # === 메인 ===
 if __name__ == "__main__":
     threading.Thread(target=run).start()  # Flask 서버를 별도의 스레드에서 실행
-<<<<<<< HEAD
     monitor()  # 봇 감시 루프를 실행
-=======
-    monitor()  # 봇 감시 루프를 실행
->>>>>>> 9aa73dd91c0bc36d17a74e455f07f35995bdeca1
