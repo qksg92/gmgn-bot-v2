@@ -5,8 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 
 # === 텔레그램 설정 ===
-TELEGRAM_TOKEN = '7724611870:AAF-bleAIi3ciNU3ND1wBf8EAceoFVl2cyk'
-TELEGRAM_CHAT_ID = '7529989951'  # 개인 ID
+TELEGRAM_TOKEN = '7724611870:AAF-bleAIi3ciNU3ND1wBf8EAceoFVl2cyk'  # 여기에 본인의 텔레그램 봇 토큰을 입력하세요.
+TELEGRAM_CHAT_ID = '7529989951'  # 여기에 본인의 텔레그램 사용자 ID를 입력하세요.
 
 # === 감시용 ===
 already_alerted = {}  # {ca: 마지막 전송시간}
@@ -46,8 +46,11 @@ def send_telegram_alert(ca):
 # === 1분 거래액 읽기 ===
 def get_1m_value(ca):
     url = make_detail_url(ca)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     try:
-        response = session.get(url, timeout=10)
+        response = session.get(url, headers=headers, timeout=10)  # User-Agent 추가
         if response.status_code != 200:
             print(f"[Error] Failed to fetch {ca} detail page (status {response.status_code})")
             return 0
@@ -82,7 +85,7 @@ def get_1m_value(ca):
 def fetch_popular_cas():
     cas = []
     try:
-        response = session.get(GMGN_POPULAR_5M_URL, timeout=10)
+        response = session.get(GMGN_POPULAR_5M_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)  # User-Agent 추가
         if response.status_code != 200:
             print("[Error] GMGN 인기탭 가져오기 실패 (status {})".format(response.status_code))
             return []
@@ -104,7 +107,7 @@ def fetch_popular_cas():
 def fetch_completed_cas():
     cas = []
     try:
-        response = session.get(GMGN_COMPLETED_URL, timeout=10)
+        response = session.get(GMGN_COMPLETED_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)  # User-Agent 추가
         if response.status_code != 200:
             print("[Error] GMGN 완료탭 가져오기 실패 (status {})".format(response.status_code))
             return []
@@ -160,7 +163,8 @@ def monitor():
                 if now - last_alert >= NO_ALERT_SECONDS:
                     send_telegram_alert(ca)
                     already_alerted[ca] = now
-                    del watchlist[ca]  # 알림 보냈으면 감시 종료
+                    # 코인을 감시 목록에서 삭제하지 않음
+                    # del watchlist[ca]  # 이 부분을 삭제하거나 주석 처리
             else:
                 # 거래액이 안 넘었고 아직 대기중이 아니면 대기상태로 바꿈
                 if not waiting:
@@ -177,9 +181,10 @@ def monitor():
                         if now - last_alert >= NO_ALERT_SECONDS:
                             send_telegram_alert(ca)
                             already_alerted[ca] = now
-                    del watchlist[ca]  # 대기 끝났으면 무조건 감시 종료
+                    # 대기 끝났으면 무조건 감시 종료
+                    # del watchlist[ca]  # 이 부분을 삭제하거나 주석 처리
 
-        time.sleep(CHECK_INTERVAL)
+        time.sleep(CHECK_INTERVAL)  # 요청 간 간격을 두어 서버에서 차단되지 않도록 함
 
 # === Flask 애플리케이션 설정 ===
 app = Flask('')
@@ -193,5 +198,5 @@ def run():
 
 # === 메인 ===
 if __name__ == "__main__":
-    threading.Thread(target=run).start()
-    monitor()
+    threading.Thread(target=run).start()  # Flask 서버를 별도의 스레드에서 실행
+    monitor()  # 봇 감시 루프를 실행
