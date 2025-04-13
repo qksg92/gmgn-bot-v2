@@ -75,7 +75,7 @@ def get_1m_value(ca):
             print(f"[Price Error] 가격 정보 없음 for {ca}")
             return 0
         price_text = price_element.split('가격 (Price)')[-1]
-        price_number = ''.join(c for c in price_text if c.isdigit() or c == '.')
+        price_number = ''.join(c for c in price_text if c.isdigit() or c == '.' )
 
         # 거래액 = 거래량 * 가격
         return float(vol_number) * float(price_number)
@@ -94,9 +94,8 @@ def fetch_all_cas_with_scroll():
     options.add_argument('--no-sandbox')  # 리눅스에서 필요할 수 있음
     options.add_argument('--disable-dev-shm-usage')  # 리눅스에서 필요할 수 있음
 
-    # === 여기에 크롬 경로 설정 ===
-    chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\135.0.7049.85\\chrome.exe"  # Chrome 경로
-    options.binary_location = chrome_path  # Chrome 경로 지정
+    # === 크롬 경로 설정 부분 삭제 ===
+    # 크롬 경로 설정이 필요하지 않으므로 이 부분은 삭제했습니다.
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(PUMP_FUN_URL_1)  # 여기서 URL을 PUMP_FUN_URL_1로 변경
