@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 Flask==3.1.0
 requests==2.32.3
 beautifulsoup4==4.13.3
 selenium==4.31.0
 webdriver-manager==4.0.2
-=======
-requests==2.32.3
-beautifulsoup4==4.13.3
-flask==3.1.0
 gunicorn==23.0.0
->>>>>>> 9aa73dd91c0bc36d17a74e455f07f35995bdeca1
