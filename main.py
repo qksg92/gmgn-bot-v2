@@ -95,7 +95,7 @@ def fetch_all_cas_with_scroll():
     options.add_argument('--disable-dev-shm-usage')  # 리눅스에서 필요할 수 있음
 
     # === 여기에 크롬 경로 설정 ===
-    chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"  # Chrome 경로
+    chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\135.0.7049.85\\chrome.exe"  # Chrome 경로
     options.binary_location = chrome_path  # Chrome 경로 지정
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
