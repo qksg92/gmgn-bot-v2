@@ -92,10 +92,10 @@ def fetch_all_cas_with_scroll():
     options = Options()
     options.headless = True  # Headless 모드 (화면 없이 실행)
     
-    # 윈도우에서는 크롬의 설치 위치를 명시할 수 있음
+    # 여기서 Chrome 실행 파일 경로를 명시합니다.
     options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
     
-    # 리눅스 옵션은 윈도우에서는 필요 없을 수 있음. 필요에 따라 주석 처리 가능.
+    # 리눅스 옵션은 윈도우에서는 필요 없으므로 주석 처리해 둡니다.
     # options.add_argument('--no-sandbox')
     # options.add_argument('--disable-dev-shm-usage')
 
