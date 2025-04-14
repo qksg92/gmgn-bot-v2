@@ -2,7 +2,7 @@ from flask import Flask
 import threading
 import time
 import requests
-import os  # 추가: 운영체제 확인을 위한 모듈
+import os  # 운영체제 구분을 위한 모듈
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -93,15 +93,16 @@ def fetch_all_cas_with_scroll():
     options = Options()
     options.headless = True  # Headless 모드 (화면 없이 실행)
     
-    # 운영체제에 따라 Chrome 실행 파일 경로 지정
-    if os.name == "nt":  # Windows
+    # 운영체제에 따라 Chrome 실행 파일 경로 및 옵션 지정
+    if os.name == "nt":  # Windows인 경우
         options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
     else:
-        # Linux 환경에서는 binary_location 지정 없이 자동으로 찾거나, 필요시 아래 경로로 수정
+        # Linux 환경 (예: Render)에서는 기본적으로 시스템에 설치된 Chrome/Chromium 사용
+        # 필요한 경우, 아래와 같이 Linux용 경로를 지정할 수 있음:
         # options.binary_location = "/usr/bin/chromium-browser"
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-    
+
     # webdriver_manager를 사용하여 ChromeDriver 자동 설치 및 실행
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(PUMP_FUN_URL_1)
