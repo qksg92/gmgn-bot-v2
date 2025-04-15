@@ -8,6 +8,9 @@ RUN apt-get update && \
 # Set the environment variable for the chromium binary path
 ENV CHROME_BIN=/usr/bin/chromium
 
+# Ensure that chrome works in headless mode
+ENV DISPLAY=:99
+
 WORKDIR /app
 
 COPY requirements.txt .
