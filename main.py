@@ -16,13 +16,13 @@ TELEGRAM_CHAT_ID = '7529989951'  # 본인의 텔레그램 사용자 ID
 
 # === 감시용 ===
 already_alerted = {}  # {ca: 마지막 전송시간}
-watchlist = {}  # {ca: {'start_time': 시작시간, 'waiting': 대기중 여부}}
+watchlist = {}        # {ca: {'start_time': 시작시간, 'waiting': 대기중 여부}}
 
 # === 기본 설정 ===
-PUMP_FUN_URL_1 = 'https://pump.fun/board?coins_sort=last_reply'  # 펌프펀 전체 코인 리스트 URL 1
-PUMP_FUN_URL_2 = 'https://pump.fun/board?coins_sort=last_trade_timestamp'  # 펌프펀 전체 코인 리스트 URL 2
-CHECK_INTERVAL = 10  # 10초마다 검사
-NO_ALERT_SECONDS = 600  # 같은 코인 다시 알림 금지 시간 (10분)
+PUMP_FUN_URL_1 = 'https://pump.fun/board?coins_sort=last_reply'              # 펌프펀 전체 코인 리스트 URL 1
+PUMP_FUN_URL_2 = 'https://pump.fun/board?coins_sort=last_trade_timestamp'      # 펌프펀 전체 코인 리스트 URL 2
+CHECK_INTERVAL = 10      # 10초마다 검사
+NO_ALERT_SECONDS = 600   # 같은 코인 다시 알림 금지 시간 (10분)
 KEEP_WATCH_SECONDS = 432000  # 감시 유지 시간 (5일)
 
 # === 세션 재사용 ===
@@ -80,7 +80,6 @@ def get_1m_value(ca):
 
         # 거래액 = 거래량 * 가격
         return float(vol_number) * float(price_number)
-        
     except Exception as e:
         print(f"[Value Error] {e}")
         with open('errors.log', 'a') as f:
@@ -92,20 +91,18 @@ def fetch_all_cas_with_scroll():
     cas = []
     options = Options()
     options.headless = True  # Headless 모드 (화면 없이 실행)
-    
+
     # 운영체제에 따라 Chrome 실행 파일 경로 및 옵션 지정
     if os.name == "nt":  # Windows인 경우
         options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
     else:
-        # Linux 환경 (예: Render)
-        options.binary_location = "/usr/bin/chromium-browser"
+        options.binary_location = "/usr/bin/chromium"
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
 
     # webdriver_manager를 사용하여 ChromeDriver 자동 설치 및 실행
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(PUMP_FUN_URL_1)
-
     time.sleep(5)  # 페이지 로드 대기
 
     last_height = driver.execute_script("return document.body.scrollHeight")
@@ -118,14 +115,13 @@ def fetch_all_cas_with_scroll():
         last_height = new_height
 
     soup = BeautifulSoup(driver.page_source, 'html.parser')
-    coins = soup.find_all('div', class_='coin-list-item')  # 해당 HTML 구조에 맞게 수정 필요
+    coins = soup.find_all('div', class_='coin-list-item')  # HTML 구조에 맞게 수정 필요
     for coin in coins:
         ca = coin.find('a')['href'].split('/')[-1]
         market_cap = coin.find('span', class_='market-cap').text.strip().replace('$', '').replace(',', '')
         volume = coin.find('span', class_='volume').text.strip().replace('$', '').replace(',', '')
         if float(market_cap) >= 10000 and float(market_cap) <= 100000:
             cas.append(ca)
-    
     driver.quit()
     return cas
 
@@ -146,7 +142,6 @@ def monitor():
             data = watchlist[ca]
             start_time = data['start_time']
             waiting = data['waiting']
-
             if now - start_time > KEEP_WATCH_SECONDS:
                 print(f"[Delete] {ca} expired")
                 del watchlist[ca]
@@ -154,7 +149,6 @@ def monitor():
 
             value = get_1m_value(ca)
             print(f"[Check] {ca} value: {value}")
-
             if value >= 5000:
                 last_alert = already_alerted.get(ca, 0)
                 if now - last_alert >= NO_ALERT_SECONDS:
@@ -172,7 +166,6 @@ def monitor():
                         if now - last_alert >= NO_ALERT_SECONDS:
                             send_telegram_alert(ca)
                             already_alerted[ca] = now
-
         time.sleep(CHECK_INTERVAL)
 
 # === Flask 애플리케이션 설정 ===
