@@ -19,10 +19,10 @@ already_alerted = {}  # {ca: 마지막 전송시간}
 watchlist = {}        # {ca: {'start_time': 시작시간, 'waiting': 대기중 여부}}
 
 # === 기본 설정 ===
-PUMP_FUN_URL_1 = 'https://pump.fun/board?coins_sort=last_reply'  # 펌프펀 전체 코인 리스트 URL 1
-PUMP_FUN_URL_2 = 'https://pump.fun/board?coins_sort=last_trade_timestamp'  # 펌프펀 전체 코인 리스트 URL 2
-CHECK_INTERVAL = 10  # 10초마다 검사
-NO_ALERT_SECONDS = 600  # 같은 코인 다시 알림 금지 시간 (10분)
+PUMP_FUN_URL_1 = 'https://pump.fun/board?coins_sort=last_reply'              # 펌프펀 전체 코인 리스트 URL 1
+PUMP_FUN_URL_2 = 'https://pump.fun/board?coins_sort=last_trade_timestamp'      # 펌프펀 전체 코인 리스트 URL 2
+CHECK_INTERVAL = 10      # 10초마다 검사
+NO_ALERT_SECONDS = 600   # 같은 코인 다시 알림 금지 시간 (10분)
 KEEP_WATCH_SECONDS = 432000  # 감시 유지 시간 (5일)
 
 # === 세션 재사용 ===
@@ -96,7 +96,11 @@ def fetch_all_cas_with_scroll():
     if os.name == "nt":  # Windows인 경우
         options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
     else:
+<<<<<<< HEAD
         options.binary_location = "/usr/bin/chromium-browser"
+=======
+        options.binary_location = "/usr/bin/chromium"
+>>>>>>> 85b4da1778eec02398af764b3cabd5c678b78a0f
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
 
