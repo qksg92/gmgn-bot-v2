@@ -97,9 +97,8 @@ def fetch_all_cas_with_scroll():
     if os.name == "nt":  # Windows인 경우
         options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
     else:
-        # Linux 환경 (예: Render)에서는 기본적으로 시스템에 설치된 Chrome/Chromium 사용
-        # 필요한 경우, 아래와 같이 Linux용 경로를 지정할 수 있음:
-        # options.binary_location = "/usr/bin/chromium-browser"
+        # Linux 환경 (예: Render)
+        options.binary_location = "/usr/bin/chromium-browser"
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
 
