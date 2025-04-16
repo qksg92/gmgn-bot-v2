@@ -94,15 +94,17 @@ def get_1m_value(ca):
 def fetch_all_cas_with_scroll(url):
     cas = []
     options = Options()
-    options.headless = True  # Headless 모드 (화면 없이 실행)
-
-    # 운영체제에 따른 Chrome 실행파일 경로 지정 (Windows/리눅스 등)
-    if os.name == "nt":  # Windows인 경우
+    options.add_argument('--headless')  # Headless 모드 (화면 없이 실행)
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    
+    # 운영체제에 따른 Chrome 바이너리 경로 지정 (Windows/리눅스 등)
+    if os.name == "nt":
         options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-    else:  # 리눅스/Render 환경인 경우
-        options.binary_location = "/usr/bin/chromium"
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
+    else:
+        # Render 환경에서는 "GOOGLE_CHROME_BIN" 환경변수가 설정되어 있는지 확인합니다.
+        chrome_bin = os.environ.get("GOOGLE_CHROME_BIN", "/usr/bin/google-chrome")
+        options.binary_location = chrome_bin
 
     # webdriver_manager를 사용한 ChromeDriver 자동 설치 및 실행
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
