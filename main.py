@@ -98,12 +98,17 @@ def fetch_all_cas_with_scroll(url):
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     
-    # 운영체제에 따른 Chrome 바이너리 경로 지정 (Windows/리눅스 등)
+    # 운영체제에 따른 Chrome 바이너리 경로 지정
     if os.name == "nt":  # Windows인 경우
         options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
     else:
-        # Linux/Render 환경 (google-chrome-stable 사용)
-        options.binary_location = "/usr/bin/google-chrome-stable"
+        # Linux/Render 환경: 먼저 google-chrome-stable, 없으면 chromium-browser 사용
+        if os.path.exists("/usr/bin/google-chrome-stable"):
+            options.binary_location = "/usr/bin/google-chrome-stable"
+        elif os.path.exists("/usr/bin/chromium-browser"):
+            options.binary_location = "/usr/bin/chromium-browser"
+        else:
+            raise Exception("No Chrome binary found. Please install google-chrome-stable or chromium-browser.")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(url)
