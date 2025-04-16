@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+# 필요한 패키지 설치 (apt-get 업데이트 후 chromium-browser 등 설치)
+RUN apt-get update && apt-get install -y chromium-browser libnss3 libgconf-2-4 && apt-get clean
+
+WORKDIR /app
+
+COPY requirements.txt /app
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . /app
+
+EXPOSE 8080
+CMD ["python", "main.py"]

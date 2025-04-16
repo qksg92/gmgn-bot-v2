@@ -1,0 +1,3 @@
+chromium-browser
+libnss3
+libgconf-2-4
