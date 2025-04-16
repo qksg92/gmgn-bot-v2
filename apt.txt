@@ -1,6 +1,0 @@
-chromium-browser
-chromedriver
-libgconf-2-4
-libnss3
-libgdk-pixbuf2.0-0
-libdbus-glib-1-2
