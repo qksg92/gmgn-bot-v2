@@ -99,13 +99,11 @@ def fetch_all_cas_with_scroll(url):
     options.add_argument('--disable-dev-shm-usage')
     
     # 운영체제에 따른 Chrome 바이너리 경로 지정 (Windows/리눅스 등)
-    if os.name == "nt":
+    if os.name == "nt":  # Windows인 경우
         options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-    else:
-        # Render 환경에서는 "GOOGLE_CHROME_BIN" 환경변수가 설정되어 있는지 확인합니다.
-        chrome_bin = os.environ.get("GOOGLE_CHROME_BIN", "/usr/bin/google-chrome")
-        options.binary_location = chrome_bin
-
+    else:  # 리눅스/Render 환경 (google-chrome-stable 사용)
+        options.binary_location = "/usr/bin/google-chrome"
+    
     # webdriver_manager를 사용한 ChromeDriver 자동 설치 및 실행
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get(url)
