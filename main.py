@@ -28,11 +28,9 @@ KEEP_WATCH_SECONDS = 432000  # 감시 유지 시간 (5일)
 # === 세션 재사용 ===
 session = requests.Session()
 
-
 # === 코인 상세 페이지 URL 생성 함수 ===
 def make_detail_url(ca):
     return f'https://pump.fun/coin/{ca}'
-
 
 # === 텔레그램 알림 함수 ===
 def send_telegram_alert(ca):
@@ -51,7 +49,6 @@ def send_telegram_alert(ca):
         print(f"[Telegram Error] {e}")
         with open('errors.log', 'a') as f:
             f.write(f"Telegram error for {ca}: {e}\n")
-
 
 # === 1분 거래액 읽기 함수 (코인 상세 페이지에서 거래량과 가격을 추출) ===
 def get_1m_value(ca):
@@ -88,7 +85,6 @@ def get_1m_value(ca):
         with open('errors.log', 'a') as f:
             f.write(f"Value error for {ca}: {e}\n")
     return 0
-
 
 # === 특정 URL에서 전체 코인 리스트 가져오기 (스크롤 다운 포함) ===
 def fetch_all_cas_with_scroll(url):
@@ -147,7 +143,6 @@ def fetch_all_cas_with_scroll(url):
     driver.quit()
     return cas
 
-
 # === 메인 감시 루프 ===
 def monitor():
     while True:
@@ -199,19 +194,15 @@ def monitor():
                             already_alerted[ca] = now
         time.sleep(CHECK_INTERVAL)
 
-
 # === Flask 애플리케이션 설정 (봇 상태 확인용) ===
 app = Flask(__name__)
-
 
 @app.route('/')
 def home():
     return "Bot is running!"
 
-
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
-
 
 # === 메인 실행 ===
 if __name__ == "__main__":
